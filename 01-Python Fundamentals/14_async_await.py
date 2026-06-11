@@ -34,9 +34,28 @@ print(normal_greet("Ritesh"))
 async def async_greet(name):
     return f"Hello (async), {name}!"
 
-# To RUN an async function, you use asyncio.run() or `await` inside another async function
+# To RUN an async function, you have two approaches:
+# Approach A: asyncio.run() - Used to start the event loop from synchronous code.
+# Approach B (Best Practice): await - Used inside other async functions to run them.
+
+# --- Approach A (Simple/Single run) ---
+# Useful for quick one-off calls, but starts/stops the event loop each time (inefficient)
 result = asyncio.run(async_greet("Ritesh"))
+
 print(result)
+
+
+
+# --- Approach B (Best Practice: Single Entry Point) ---
+# In real applications, you start the loop ONCE using asyncio.run() at the entry point,
+# and use `await` everywhere else. This is faster and lets you share database connections.
+async def main():
+    # 'await' pauses this function until async_greet completes, letting other tasks run
+    result_with_await = await async_greet("Ritesh")
+    print(f"{result_with_await} (called with await)")
+
+# Start the event loop once for the whole program
+asyncio.run(main())
 
 print()
 
