@@ -14,34 +14,33 @@
 # * Everywhere: Grouping related data and behavior together.
 
 print("==========================================")
-print("1. CREATING A SIMPLE CLASS")
+print("1. CREATING A CLASS AND ITS OBJECTS")
 print("==========================================")
 
-# `class` keyword creates a new class
-# `__init__` is a special method called automatically when you create an object
-# `self` refers to the specific object being created (like "this" in other languages)
-
+# Step 1: Define the blueprint (Class)
 class Dog:
-    # __init__ runs automatically when you create a Dog
+    # __init__ is the constructor. It runs automatically when we create an object.
+    # self represents the specific object we are creating.
     def __init__(self, name, breed):
-        # Store the values on `self` so we can use them later
         self.name = name
         self.breed = breed
 
-    # This is a method (a function inside a class)
     def bark(self):
         print(f"{self.name} says: Woof!")
 
-# Creating OBJECTS (instances) from the Dog blueprint:
-dog1 = Dog("Bruno", "Labrador")
-dog2 = Dog("Max", "Pug")
 
+# Step 2: Create the actual Objects (also called Instances)
+# Syntax: object_name = ClassName(arguments)
+# When we call Dog("Bruno", "Labrador"), Python automatically calls __init__ behind the scenes.
+
+dog1 = Dog("Bruno", "Labrador")  # Created object 1 (dog1)
+dog2 = Dog("Max", "Pug")         # Created object 2 (dog2)
+
+# Step 3: Access attributes and methods of the objects
 print("Dog 1 name:", dog1.name)
 print("Dog 2 breed:", dog2.breed)
 dog1.bark()
 dog2.bark()
-
-print()
 
 # ==========================================
 print("2. CLASS WITH MULTIPLE METHODS")
@@ -54,17 +53,17 @@ class BankAccount:
 
     def deposit(self, amount):
         self.balance = self.balance + amount
-        print(f"Deposited ₹{amount}. New balance: ₹{self.balance}")
+        print(f"Deposited Rs.{amount}. New balance: Rs.{self.balance}")
 
     def withdraw(self, amount):
         if amount > self.balance:
             print("Not enough money!")
         else:
             self.balance = self.balance - amount
-            print(f"Withdrew ₹{amount}. New balance: ₹{self.balance}")
+            print(f"Withdrew Rs.{amount}. New balance: Rs.{self.balance}")
 
     def show_balance(self):
-        print(f"Account owner: {self.owner} | Balance: ₹{self.balance}")
+        print(f"Account owner: {self.owner} | Balance: Rs.{self.balance}")
 
 account = BankAccount("Ritesh", 5000)
 account.show_balance()
@@ -78,25 +77,62 @@ print()
 print("3. INHERITANCE — One class inherits from another")
 print("==========================================")
 
-# Inheritance means a NEW class gets all the features of an EXISTING class.
-# Then you can add more features on top.
+# Think of it like a Parent and Child:
+# 1. The Parent has some skills/possessions.
+# 2. The Child inherits them automatically (gets them for free!).
+# 3. The Child can also add their own skills, or "override" the Parent's skills.
 
-class Animal:
-    def __init__(self, name):
-        self.name = name
+# --- 3A. Simple Inheritance ---
+class Parent:
+    def __init__(self, surname):
+        self.surname = surname
 
-    def eat(self):
-        print(f"{self.name} is eating.")
+    def drive(self):
+        print("Driving the family car.")
 
-# Cat INHERITS from Animal — it gets `name` and `eat()` for free!
-class Cat(Animal):
-    def meow(self):
-        print(f"{self.name} says: Meow!")
+# Child inherits from Parent by putting Parent in parentheses: Child(Parent)
+class Child(Parent):
+    def play_games(self):
+        print("Playing video games.")
 
-my_cat = Cat("Whiskers")
-my_cat.eat()    # Inherited from Animal
-my_cat.meow()  # Defined in Cat
+# Let's test the Child:
+kid = Child("Sinha")
+print("--- 3A. Basic Inheritance ---")
+print(f"Child's surname is: {kid.surname}")  # Inherited surname attribute!
+kid.drive()                                   # Inherited drive method!
+kid.play_games()                              # Child's own method!
+print()
 
+# --- 3B. Method Overriding ---
+# When the Child changes a skill they inherited from the Parent:
+class ChildWhoCooks(Parent):
+    # Overriding the drive method to do it differently
+    def drive(self):
+        print("Driving a sports car very fast!")
+
+cook_kid = ChildWhoCooks("Sinha")
+print("--- 3B. Method Overriding ---")
+cook_kid.drive()  # Uses the overridden version, not the parent's version
+print()
+
+# --- 3C. Using super() ---
+# When the Child wants to do something but also call the Parent's version first:
+class SmartChild(Parent):
+    def __init__(self, surname, school):
+        # Call the parent's __init__ to handle the surname
+        super().__init__(surname)
+        # Handle the new attribute
+        self.school = school
+
+    def drive(self):
+        # Run the parent's drive method first, then add more stuff!
+        super().drive()
+        print("But driving very carefully because I'm a student.")
+
+smart_kid = SmartChild("Sinha", "High School")
+print("--- 3C. Using super() ---")
+print(f"Smart kid's school is: {smart_kid.school}")
+smart_kid.drive()
 print()
 
 # ==========================================
