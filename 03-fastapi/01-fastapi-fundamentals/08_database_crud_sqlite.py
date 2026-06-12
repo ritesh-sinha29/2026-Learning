@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from typing import List, Union
 
 # SQLAlchemy Imports
-from sqlalchemy import create_url, create_engine, String, Boolean
+from sqlalchemy import create_engine, String, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, Session
 
 # ==========================================================

@@ -18,8 +18,8 @@
 # - 404 Not Found: Resource does not exist.
 # - 500 Internal Server Error: Server crashed.
 
-from fastapi import FastAPI, status
-from pydantic import BaseModel, EmailStr
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
 from typing import Union
 import uvicorn
 
@@ -88,8 +88,7 @@ async def create_user(user_in: UserCreate):
 )
 async def get_user(username: str):
     if username not in USERS_DATABASE:
-        # In the next tutorial, we will study error handling in depth.
-        return {"error": "Not found"}  # Just a placeholder for now
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{username}' not found.")
         
     return USERS_DATABASE[username]
 
