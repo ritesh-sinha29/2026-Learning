@@ -100,6 +100,13 @@ async def search(
     }
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    uvicorn.run("03_query_parameters:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 03_query_parameters.py`
 # 2. Go to: http://127.0.0.1:8000/docs
@@ -107,5 +114,71 @@ async def search(
 # 4. Try `/search-users` with `active=false`. Watch it convert "false" to boolean `False`.
 # 5. Try `/search` with a query `q` that is too short (e.g. `ab`) and check the error.
 
-if __name__ == "__main__":
-    uvicorn.run("03_query_parameters:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. SEARCH & FILTER (like Naukri.com / LinkedIn Jobs)
+#    - GET /jobs?title=developer&location=bangalore&experience=3
+#    - All filters are query parameters. If not provided → return all jobs.
+#    - This is the MOST common use of query parameters in real products.
+
+# 2. PAGINATION (like Twitter Feed / Instagram)
+#    - GET /posts?skip=0&limit=10  → first 10 posts (page 1)
+#    - GET /posts?skip=10&limit=10 → next 10 posts (page 2)
+#    - Every social media feed uses skip+limit or cursor-based pagination.
+
+# 3. SEARCH WITH VALIDATION (like GitHub / GitLab API)
+#    - GitHub's API uses `q` param: GET /search/repositories?q=fastapi&sort=stars
+#    - Query is validated server-side for min length → prevents empty/garbage searches.
+#    - FastAPI's Query(min_length=3) does this automatically.
+
+# 4. SORTING (like Amazon / Flipkart product listing)
+#    - GET /products?sort=price_asc   → sort by price ascending
+#    - GET /products?sort=rating_desc → sort by rating descending
+#    - The `sort` param is optional; default is usually "relevance".
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. How does FastAPI distinguish between a path parameter and a query parameter?
+# A:  FastAPI checks the function signature:
+#       - If the variable name appears in the path string (e.g., `{item_id}`) → PATH param.
+#       - If the variable is NOT in the path → automatically treated as QUERY param.
+#     Example:
+#       @app.get("/items/{item_id}")
+#       def get_item(item_id: int, q: str = None):
+#         # item_id → path param (in URL path)
+#         # q      → query param (not in path, appears after ?)
+
+# Q2. How does FastAPI handle boolean query parameters?
+# A:  FastAPI is smart about boolean conversion from URL strings:
+#       ?active=true, ?active=1, ?active=yes, ?active=on  → Python True
+#       ?active=false, ?active=0, ?active=no, ?active=off → Python False
+#     This is done automatically by Pydantic's type coercion. You just declare `active: bool`.
+
+# Q3. What is the `Query` class in FastAPI and when do you use it?
+# A:  `Query` is a special function from FastAPI that lets you add METADATA and VALIDATION
+#     to query parameters. You use it when you need:
+#       - min_length / max_length (for strings)
+#       - gt / lt / ge / le (for numbers: greater than, less than)
+#       - description (shown in Swagger docs)
+#       - alias (use a different name in the URL vs in Python code)
+#     Without Query(): just a simple parameter with optional default.
+#     With Query(): a parameter with rules + documentation.
+
+# Q4. What is the difference between `q: str = None` and `q: str = Query(default=None, min_length=3)`?
+# A:  `q: str = None` → Optional string, no validation. Any value (even empty) is accepted.
+#     `q: str = Query(default=None, min_length=3)` → Optional, BUT if provided, must be >= 3 chars.
+#     FastAPI automatically returns 422 if validation fails. No try/except needed.
+
+# Q5. In a real project, how would you implement pagination for a GET /products endpoint?
+# A:  @app.get("/products")
+#     def get_products(skip: int = 0, limit: int = Query(default=10, le=100)):
+#         # `le=100` means limit cannot exceed 100. Prevents someone requesting 100,000 records!
+#         products = db.query(Product).offset(skip).limit(limit).all()
+#         return products
+#     Always cap the limit (e.g., max 100) to prevent performance attacks.

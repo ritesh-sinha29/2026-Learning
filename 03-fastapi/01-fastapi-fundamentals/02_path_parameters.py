@@ -82,6 +82,20 @@ async def read_file(file_path: str):
     }
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+# Open your terminal in this folder and run:
+#   python 02_path_parameters.py
+# OR
+#   uvicorn 02_path_parameters:app --reload
+#
+# Then open: http://127.0.0.1:8000/docs
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    uvicorn.run("02_path_parameters:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 02_path_parameters.py`
 # 2. Go to: http://127.0.0.1:8000/docs
@@ -90,5 +104,62 @@ async def read_file(file_path: str):
 # 5. Try out `/items/hello` (returns automatic validation error - standard HTTP 422)
 # 6. Try out `/files/docs/notes/class1.pdf` (works, captures the whole path!)
 
-if __name__ == "__main__":
-    uvicorn.run("02_path_parameters:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. USER PROFILE PAGE (like LinkedIn / Twitter)
+#    - GET /users/{username} → fetch profile of user "ritesh_sinha"
+#    - LinkedIn uses: GET /in/{publicIdentifier} to display any user's public profile.
+#    - The path param is the username. If user not found → return 404.
+
+# 2. PRODUCT DETAIL PAGE (like Amazon / Flipkart)
+#    - GET /products/{product_id} → fetch all details of product ID 123456.
+#    - Each product URL has a unique ID embedded in it:
+#      https://amazon.in/dp/B09G3HRMVB → B09G3HRMVB is the path parameter!
+
+# 3. ORDER TRACKING (like Swiggy / Zomato)
+#    - GET /orders/{order_id}/status → returns live status of order 5001.
+#    - Nested path params are very common in REST APIs.
+
+# 4. FILE SERVING (like Google Drive / Dropbox)
+#    - GET /files/{file_path:path} → can serve /docs/2024/report.pdf directly.
+#    - The `:path` converter is used when the param itself contains slashes.
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. What are path parameters in FastAPI? Give a real-life example.
+# A:  Path parameters are dynamic parts of the URL. FastAPI captures them using `{variable_name}`.
+#     Real-life: GET /users/42 → 42 is the path param. Used to identify a SPECIFIC resource.
+#     FastAPI uses type hints to automatically VALIDATE and CONVERT the captured value.
+
+# Q2. What happens when you access /items/abc in a route defined as /items/{item_id} where item_id: int?
+# A:  FastAPI returns a 422 Unprocessable Entity error.
+#     The error message is a clear JSON explaining:
+#       {"detail": [{"loc": ["path", "item_id"], "msg": "value is not a valid integer"}]}
+#     You don't write any of this validation code — FastAPI does it automatically!
+
+# Q3. Why must static routes be defined BEFORE dynamic routes?
+# A:  FastAPI matches routes TOP TO BOTTOM in the file.
+#     If /items/{item_id} is defined before /items/featured:
+#       → FastAPI treats "featured" as item_id, tries to convert to int, FAILS.
+#     If /items/featured is defined BEFORE /items/{item_id}:
+#       → FastAPI matches "featured" first (exact match), returns correct result.
+#     RULE: Specific (hardcoded) routes MUST come before generic (dynamic) routes.
+
+# Q4. What is the difference between `item_id: int` and `item_id: str` as a path param?
+# A:  `item_id: int` → FastAPI validates the value is a valid integer. /items/abc → 422 error.
+#     `item_id: str` → FastAPI accepts anything as a string. /items/abc → works fine.
+#     Always use the MOST RESTRICTIVE type you need — this prevents bugs early.
+
+# Q5. What does {file_path:path} mean in FastAPI routes?
+# A:  By default, path parameters don't match forward slashes (/).
+#     Adding `:path` tells FastAPI to capture everything including slashes.
+#     Example: /files/{file_path:path}
+#       → GET /files/docs/notes/class1.pdf → file_path = "docs/notes/class1.pdf"
+#     Without `:path`, FastAPI would only capture "docs" and treat the rest as a separate route.
+

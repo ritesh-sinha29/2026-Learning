@@ -171,6 +171,13 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)):
     return None
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    uvicorn.run("08_database_crud_sqlite:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 08_database_crud_sqlite.py`
 # 2. A file named `todos.db` will be created in this directory.
@@ -180,5 +187,82 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)):
 # 6. Try PUT `/todos/1` to toggle `"completed": true`.
 # 7. Try DELETE `/todos/1` to delete the task.
 
-if __name__ == "__main__":
-    uvicorn.run("08_database_crud_sqlite:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. TODO / TASK MANAGER (like Jira / Trello / Notion)
+#    - POST /tasks → create a new task (INSERT into DB)
+#    - GET /tasks → fetch all tasks (SELECT * from DB)
+#    - PUT /tasks/5 → mark task 5 as complete (UPDATE in DB)
+#    - DELETE /tasks/5 → remove task (DELETE from DB)
+#    - Every task management tool is built on top of CRUD operations.
+
+# 2. USER MANAGEMENT (like any SaaS product)
+#    - POST /users → register new user (INSERT)
+#    - GET /users → admin lists all users (SELECT)
+#    - PUT /users/10 → update profile (UPDATE)
+#    - DELETE /users/10 → account deletion (DELETE)
+#    - Companies like Freshworks, Zoho use this exact pattern.
+
+# 3. BLOG / CMS PLATFORM (like Medium / WordPress API)
+#    - POST /articles → author creates new post (INSERT)
+#    - GET /articles → readers fetch all posts (SELECT)
+#    - PUT /articles/3 → editor updates content (UPDATE)
+#    - DELETE /articles/3 → author deletes post (DELETE)
+
+# 4. INVENTORY MANAGEMENT (like Warehouse Management System)
+#    - POST /products → add new product to inventory (INSERT)
+#    - GET /products?category=electronics → filtered stock list (SELECT with filter)
+#    - PUT /products/7 → update price or stock count (UPDATE)
+#    - DELETE /products/7 → discontinue product (soft or hard DELETE)
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. What is an ORM and why is SQLAlchemy used in FastAPI projects?
+# A:  ORM (Object Relational Mapper) lets you interact with a database using Python objects
+#     instead of writing raw SQL strings.
+#     Without ORM:  db.execute("SELECT * FROM users WHERE id = 5")
+#     With ORM:     db.query(User).filter(User.id == 5).first()
+#     Why SQLAlchemy:
+#       - Industry standard in Python. Used in Netflix, Reddit, Instagram, Dropbox.
+#       - Prevents SQL injection attacks automatically.
+#       - Works with any DB: SQLite, PostgreSQL, MySQL, Oracle.
+
+# Q2. What is the difference between `db.add()`, `db.commit()`, and `db.refresh()`?
+# A:  db.add(obj)     → Stages the object for insertion (like git add). NOT in DB yet.
+#     db.commit()     → Writes the staged changes to the database permanently (like git commit).
+#     db.refresh(obj) → Reloads the object from DB to get auto-generated values (like the new ID).
+#     ALWAYS call refresh() after commit() when you need the generated primary key.
+
+# Q3. What is the difference between SQLite and PostgreSQL? When do you use which?
+# A:  SQLite:
+#       - File-based database (no server needed). Perfect for development & learning.
+#       - NOT for production (single writer, no concurrent connections).
+#       - Created automatically: `sqlite:///./todos.db` creates a local file.
+#     PostgreSQL:
+#       - Full-featured database server. Used in ALL production systems.
+#       - Handles thousands of concurrent connections.
+#       - Used by: Instagram, Uber, Twitch, Shopify.
+#     Rule: Use SQLite to learn/develop. Switch to PostgreSQL before going to production.
+
+# Q4. What does `from_attributes = True` in Pydantic's Config class do?
+# A:  By default, Pydantic models only accept dictionaries as input.
+#     SQLAlchemy returns ORM objects (like `TodoTable` instances), not dicts.
+#     `from_attributes = True` (was `orm_mode = True` in Pydantic v1) tells Pydantic:
+#       "Hey, also accept ORM objects! Read attributes by name, not just dict keys."
+#     Without it, `return todo_obj` in a route with `response_model=TodoResponse` would crash.
+
+# Q5. What is the purpose of a `get_db` dependency with `yield` in FastAPI?
+# A:  It follows the "open-use-close" pattern for database connections:
+#       1. `db = SessionLocal()` → Opens a fresh DB connection/transaction.
+#       2. `yield db` → Passes it to the route. The route does its DB work.
+#       3. `finally: db.close()` → ALWAYS closes the connection, even if an error occurs.
+#     Why this matters:
+#       - DB connections are expensive resources. You must close them.
+#       - Without `finally`, a crash in the route would leave the connection open forever,
+#         eventually exhausting the connection pool. (Classic production bug!)

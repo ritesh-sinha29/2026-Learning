@@ -94,6 +94,13 @@ async def get_user(username: str):
     return USERS_DATABASE[username]
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    uvicorn.run("05_response_models_and_status:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 05_response_models_and_status.py`
 # 2. Go to: http://127.0.0.1:8000/docs
@@ -101,5 +108,71 @@ async def get_user(username: str):
 #    It returns HTTP code 201 (Created), and the JSON payload contains only `username`, 
 #    `email`, and `is_active`. The `password` key is completely hidden!
 
-if __name__ == "__main__":
-    uvicorn.run("05_response_models_and_status:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. USER AUTHENTICATION SYSTEM (like any app login)
+#    - POST /users creates user. Database stores hashed password.
+#    - Response model STRIPS the password field automatically.
+#    - This is a CRITICAL security practice. Leaking password hashes can lead to data breach.
+
+# 2. E-COMMERCE ORDER RESPONSE
+#    - Database order record has: user_id, internal_cost, profit_margin, warehouse_id...
+#    - API response to customer should only have: order_id, items, total_price, delivery_date.
+#    - Response model ensures internal/sensitive fields are NEVER sent to the customer.
+
+# 3. INTERNAL ADMIN vs PUBLIC API
+#    - Same endpoint, different response models for different user types.
+#    - Admin sees: GET /users/{id} → UserAdminResponse (includes all fields)
+#    - Public sees: GET /users/{id} → UserPublicResponse (only name, bio, avatar)
+#    - In MNCs, this is implemented using response_model + role-based access control.
+
+# 4. CORRECT STATUS CODES IN PRODUCTION
+#    - POST /orders → 201 Created (resource created)
+#    - DELETE /orders/1 → 204 No Content (deleted, nothing to return)
+#    - GET /orders/999 → 404 Not Found (doesn't exist)
+#    - POST /login with wrong password → 401 Unauthorized
+#    - Incorrect status codes cause frontend bugs and confuse monitoring systems.
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. Why should we use `response_model` in FastAPI?
+# A:  Three key reasons:
+#       1. SECURITY: Prevents sensitive data (passwords, tokens) from leaking to clients.
+#       2. CONTRACT: Guarantees the API always returns a consistent structure.
+#       3. DOCUMENTATION: Swagger UI shows the exact response schema automatically.
+#     Without it, you might accidentally return raw DB objects with hidden fields.
+
+# Q2. What is the difference between HTTP 200, 201, 204?
+# A:  200 OK       → Request succeeded. Data returned in body. Used for GET, PUT.
+#     201 Created  → A new resource was created. Used for POST. Body has the new resource.
+#     204 No Content → Request succeeded but nothing to return. Used for DELETE.
+#     Using wrong codes is a common bug in junior developers' code at MNCs.
+
+# Q3. What is the difference between HTTP 401 and 403?
+# A:  401 Unauthorized → "Who are you?" — Client is NOT authenticated (no/invalid token).
+#     403 Forbidden     → "I know who you are, but NO." — Client IS authenticated but doesn't
+#                         have permission for this action.
+#     Example:
+#       - Guest accessing /dashboard → 401 (needs to login first)
+#       - Regular user accessing /admin → 403 (logged in, but not an admin)
+
+# Q4. How does FastAPI's `response_model` filter data?
+# A:  When you return a dict or ORM object, FastAPI:
+#       1. Passes it through the `response_model` Pydantic model.
+#       2. Pydantic ONLY keeps the fields defined in the model.
+#       3. Any extra fields (like `password`) are SILENTLY dropped.
+#     This happens AFTER your function runs — you can still use `password` inside your function.
+
+# Q5. What is `status.HTTP_201_CREATED` and why use it instead of just writing `201`?
+# A:  `status.HTTP_201_CREATED` is a constant from FastAPI that equals the integer 201.
+#     Benefits of using constants:
+#       - Self-documenting: The name tells you what the code means.
+#       - Less chance of typos: Typing 210 instead of 201 is a silent bug.
+#       - IDE autocomplete helps: Type `status.HTTP_` and see all options.
+#     It's a best practice in all MNC Python codebases.

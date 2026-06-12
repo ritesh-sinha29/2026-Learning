@@ -174,6 +174,16 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    if not HAS_PYJWT:
+        print("\n[Warning] 'pyjwt' is not installed. Running in token simulation mode.")
+        print("Install it using: pip install pyjwt\n")
+    uvicorn.run("10_security_jwt:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 10_security_jwt.py`
 # 2. Go to: http://127.0.0.1:8000/docs
@@ -182,8 +192,76 @@ async def read_users_me(current_user: dict = Depends(get_current_user)):
 # 5. Click the "Authorize" button, type username: `ritesh` and password: `mysecret123`. Click Authorize.
 # 6. Run GET `/users/me` again. Swagger automatically sends the bearer token, and it succeeds!
 
-if __name__ == "__main__":
-    if not HAS_PYJWT:
-        print("\n[Warning] 'pyjwt' is not installed. Running in token simulation mode.")
-        print("Install it using: pip install pyjwt\n")
-    uvicorn.run("10_security_jwt:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. USER LOGIN / SESSION (like any app: Swiggy, Zomato, IRCTC)
+#    - User logs in with email+password → POST /token → receives JWT.
+#    - App stores token in localStorage or cookie.
+#    - Every future request sends: Authorization: Bearer <token>
+#    - Backend verifies token → no need to hit DB for EVERY request.
+
+# 2. MICROSERVICE AUTH (like internal APIs at Infosys / Wipro)
+#    - Service A calls Service B. Service A includes its JWT in the request.
+#    - Service B verifies the JWT signature using the shared SECRET_KEY.
+#    - No username/password exchange between services — just tokens.
+
+# 3. ROLE-BASED ACCESS CONTROL (like admin panels)
+#    - JWT payload includes: {"sub": "ritesh", "role": "admin"}
+#    - Routes check the role from the token.
+#    - Admin routes only allow role=="admin". Others get 403 Forbidden.
+#    - Used in every CMS, ERP, and SaaS admin dashboard.
+
+# 4. MOBILE APP AUTH (like PhonePe / Google Pay)
+#    - Mobile app logs in once and stores the JWT locally.
+#    - Token expires in 30 mins. Refresh token extends session without re-login.
+#    - User stays "logged in" for days without re-entering password.
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. What is JWT and how does it work?
+# A:  JWT = JSON Web Token. It's a compact, signed string with 3 parts separated by dots:
+#       Header.Payload.Signature
+#     Header:    Algorithm used (e.g., {"alg": "HS256"})
+#     Payload:   Data/claims (e.g., {"sub": "ritesh", "role": "admin", "exp": 1234567890})
+#     Signature: HMAC of Header+Payload using SECRET_KEY. Proves the token wasn't tampered.
+#     The server NEVER stores the token. It just verifies the signature on each request.
+
+# Q2. What is the difference between Authentication and Authorization?
+# A:  Authentication → "Who are you?" — Verifying identity. (Login with username/password)
+#     Authorization  → "What can you do?" — Checking permissions. (Admin vs Normal user)
+#     Example flow:
+#       1. POST /token with username+password → AUTHENTICATION (verify identity, issue JWT)
+#       2. GET /admin with JWT → AUTHORIZATION (verify role == 'admin' from token)
+#     FastAPI handles both using OAuth2PasswordBearer + JWT + role checks.
+
+# Q3. Why do we hash passwords instead of storing them in plain text?
+# A:  If your database is compromised (hacked), plain text passwords are exposed directly.
+#     Hashed passwords: even with DB access, hacker cannot reverse the hash to get the password.
+#     Hashing is ONE-WAY: Password → Hash (easy). Hash → Password (computationally impossible).
+#     Always use bcrypt or PBKDF2 for password hashing. NEVER use MD5 or SHA1 for passwords.
+#     MNC standard: Use `passlib[bcrypt]` library in production FastAPI projects.
+
+# Q4. What is OAuth2 and how does FastAPI implement it?
+# A:  OAuth2 is an industry-standard AUTHORIZATION protocol.
+#     FastAPI's `OAuth2PasswordBearer` implements the "Password Flow" of OAuth2:
+#       1. Client sends username+password to /token endpoint.
+#       2. Server validates, returns {"access_token": "...", "token_type": "bearer"}.
+#       3. Client includes `Authorization: Bearer <token>` header in future requests.
+#     The "Bearer" prefix is part of the OAuth2 standard. It tells the server
+#     the type of token being sent.
+
+# Q5. What is token expiration and why is it important?
+# A:  JWT tokens have an `exp` (expiration) claim. After this time, the token is INVALID.
+#     Why important:
+#       - Stolen tokens: If a token is stolen, it becomes useless after it expires.
+#       - No logout mechanism: Since JWT is stateless, expiration is the only "forced logout".
+#     Best practices:
+#       - Short-lived access tokens: expire in 15-60 minutes.
+#       - Long-lived refresh tokens: expire in 7-30 days. Used to get new access tokens.
+#       - Critical systems (banking): expire in 5 minutes. Users re-authenticate frequently.

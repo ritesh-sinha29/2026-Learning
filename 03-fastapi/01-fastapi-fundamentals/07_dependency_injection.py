@@ -103,6 +103,13 @@ async def query_db(query_text: str, db: MockDatabaseSession = Depends(get_db_ses
     return {"status": "Success", "data": result}
 
 
+# ----------------------------------------------------------
+# HOW TO RUN THIS FILE
+# ----------------------------------------------------------
+if __name__ == "__main__":
+    uvicorn.run("07_dependency_injection:app", host="127.0.0.1", port=8000, reload=True)
+
+
 # --- QUICK SUMMARY FOR RETESTING ---
 # 1. Run this file: `python 07_dependency_injection.py`
 # 2. Go to: http://127.0.0.1:8000/docs
@@ -113,5 +120,76 @@ async def query_db(query_text: str, db: MockDatabaseSession = Depends(get_db_ses
 #    "[DB Connection] Opening connection session..." followed by 
 #    "[DB Connection] Closing connection session!" proving the cleanup worked.
 
-if __name__ == "__main__":
-    uvicorn.run("07_dependency_injection:app", host="127.0.0.1", port=8000, reload=True)
+
+# ==========================================================
+# REAL-LIFE USE CASES
+# ==========================================================
+
+# 1. DATABASE SESSION PER REQUEST (like every MNC backend)
+#    - Every route that touches the DB needs a session. Without DI:
+#        db = SessionLocal() → copy-paste in every function → bugs everywhere.
+#    - With DI: def get_db() is defined ONCE. Every route just writes `db = Depends(get_db)`.
+#    - If DB fails → the dependency raises an error → none of your routes need try/except.
+
+# 2. AUTHENTICATION & AUTHORIZATION (like every secured API)
+#    - `get_current_user` is a dependency. Any route that needs auth just adds:
+#        user = Depends(get_current_user)
+#    - Without DI: you'd write the same token verification code in EVERY protected route.
+#    - With DI: write once, reuse everywhere. Change auth logic in ONE place.
+
+# 3. RATE LIMITING (like Razorpay / Stripe API)
+#    - A dependency checks: "Has this IP made more than 100 requests in 60 seconds?"
+#    - If yes → dependency raises HTTPException(429, "Too Many Requests")
+#    - All routes are automatically rate-limited just by adding Depends(rate_limiter).
+
+# 4. FEATURE FLAGS (like Netflix / Swiggy A/B testing)
+#    - A dependency reads a feature flag config and returns which features are ON/OFF.
+#    - Routes use Depends(get_feature_flags) to show different UI/behavior to users.
+#    - New features can be toggled ON/OFF without code deployment.
+
+
+# ==========================================================
+# MNC INTERVIEW QUESTIONS & ANSWERS
+# ==========================================================
+
+# Q1. What is Dependency Injection and why is it used in FastAPI?
+# A:  Dependency Injection (DI) means: a function declares what it NEEDS (its dependencies)
+#     and FastAPI automatically creates and provides those dependencies.
+#     Benefits:
+#       1. REUSABILITY: Write a dependency once (like DB session), use in 50 routes.
+#       2. TESTABILITY: Easily swap real dependencies with mock ones in tests.
+#       3. CLEANLINESS: Route handlers stay small — complex setup logic lives in dependencies.
+
+# Q2. How does `Depends()` work in FastAPI?
+# A:  When FastAPI sees `param = Depends(some_function)`, it:
+#       1. Calls `some_function` automatically (resolving its own params from the request).
+#       2. Passes the return value as `param` to your route function.
+#     The dependency function can itself have parameters (query params, headers, other Depends).
+#     FastAPI resolves the full dependency graph automatically.
+
+# Q3. What is the difference between `return` and `yield` in a FastAPI dependency?
+# A:  `return` → Simple dependency. Runs setup, returns value, done.
+#     `yield` → Resource dependency with cleanup. Pattern:
+#         setup code
+#         yield resource     ← route function runs here
+#         cleanup code       ← runs AFTER response is sent
+#     Use `yield` for: database sessions, file handles, HTTP client connections.
+#     Use `return` for: simple computed values, auth checks, config loading.
+
+# Q4. Can one dependency depend on another dependency in FastAPI?
+# A:  YES! FastAPI resolves nested/chained dependencies automatically.
+#     Example chain:
+#       get_db() → returns DB session
+#       verify_token() → reads header, verifies JWT
+#       get_current_user(db=Depends(get_db), token=Depends(verify_token)) → uses both!
+#       admin_only(user=Depends(get_current_user)) → checks user.role == 'admin'
+#     FastAPI builds this dependency tree and resolves everything before calling the route.
+
+# Q5. How do you override a dependency in tests?
+# A:  FastAPI provides `app.dependency_overrides` for this.
+#     Example:
+#       def fake_get_db():  # Mock DB that doesn't touch real database
+#           yield MockDB()
+#       app.dependency_overrides[get_db] = fake_get_db
+#     This is HOW you write unit tests for FastAPI routes without a real database.
+#     After tests: app.dependency_overrides.clear() to restore original dependencies.

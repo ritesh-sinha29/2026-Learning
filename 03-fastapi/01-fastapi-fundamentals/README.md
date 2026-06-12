@@ -39,13 +39,62 @@ Here are the topics we will cover in order:
 ---
 
 ## 🛠️ How to Run Any Script
-Every script in this folder has a built-in launcher! Run it with Poetry:
+
+There are **2 ways** to run a FastAPI file. Both give the same result.
+
+---
+
+### ▶️ Method A — Terminal Command (Recommended ✅)
+
 ```bash
-poetry run python "03-FastAPI Fundamentals/<script_name>.py"
+uvicorn 01_introduction_and_setup:app --reload
 ```
-For example, to run the first file:
+
+Or with Poetry (if you haven't activated the shell):
 ```bash
-poetry run python "03-FastAPI Fundamentals/01_introduction_and_setup.py"
+poetry run uvicorn 01_introduction_and_setup:app --reload
 ```
-This will start a local server at `http://127.0.0.1:8000`. 
-Open `http://127.0.0.1:8000/docs` in your browser to view the interactive API playground (Swagger UI)!
+
+- `01_introduction_and_setup` → the Python **filename** (without `.py`)
+- `app` → the FastAPI **instance** created inside that file (`app = FastAPI()`)
+- `--reload` → **auto-restarts** the server every time you save the file
+- The `if __name__ == "__main__":` block inside the file is **NOT used** here
+
+---
+
+### ▶️ Method B — Run as Python Script
+
+```bash
+python 01_introduction_and_setup.py
+```
+
+Or with Poetry:
+```bash
+poetry run python 01_introduction_and_setup.py
+```
+
+- Python runs the file top to bottom
+- When it reaches `if __name__ == "__main__":` → that condition is **True** → it calls `uvicorn.run()` internally
+- Same result as Method A, just triggered differently
+
+---
+
+### 🤔 What is `if __name__ == "__main__":` ?
+
+Every Python file has a built-in variable called `__name__`.
+
+| Situation | Value of `__name__` | `if` block runs? |
+|---|---|---|
+| You run the file directly (`python file.py`) | `"__main__"` | ✅ Yes |
+| Someone imports the file (`import file`) | `"file"` (filename) | ❌ No |
+
+This guard **prevents the server from starting accidentally** when another file imports this one.
+
+> **Simple rule:** Use **Method A** (terminal uvicorn command) for daily development.  
+> The `if __name__` block is a convenience fallback for running the file as a plain script.
+
+---
+
+After starting the server, open your browser at:
+- `http://127.0.0.1:8000/docs` → **Swagger UI** (interactive API playground)
+- `http://127.0.0.1:8000/redoc` → **ReDoc** (clean documentation view)
