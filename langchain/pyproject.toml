@@ -1,0 +1,20 @@
+[project]
+name = "langchain-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=1.3.11",
+    "langchain-anthropic>=1.4.8",
+    "langchain-community>=0.4.2",
+    "langchain-core>=1.4.8",
+    "langchain-google-genai>=4.2.7",
+    "langchain-groq>=1.1.3",
+    "langchain-huggingface>=1.2.2",
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.3.3",
+    "langchain-tavily>=0.2.18",
+    "langgraph>=1.2.8",
+    "python-dotenv>=1.2.2",
+]
